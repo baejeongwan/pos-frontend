@@ -1,0 +1,11 @@
+.menu-button {
+    width: 100%;
+    aspect-ratio: 1/1;
+    border: 0px solid transparent;
+    background-color: #ccc;
+    font-size: large;
+}
+
+.menu-button:hover {
+    background-color: #eee;
+}
