@@ -1,3 +1,11 @@
+/**
+ * 메뉴 목록을 불러온다.
+ * @module loadMenuData
+ * @author Bae Jeongwan <jayden.bae@outlook.kr>
+ * @version 1.0.0
+ * @license GPL
+ */
+
 function loadMenuData() {
     console.groupCollapsed("메뉴 목록 불러오기")
     let menuOrigData = [
