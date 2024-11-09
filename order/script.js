@@ -5,7 +5,6 @@
  * @version 1.0.0
  * @license GPL
  */
-import { loadMenuData } from "./load-menu-data.js"
 import { renderMenus } from "./render-from-data.js"
 import { io } from "socket.io-client"
 import Swal from "sweetalert2"
@@ -13,10 +12,6 @@ import Swal from "sweetalert2"
 const socket = io()
 
 init()
-
-let connectionState = {
-    
-}
 
 /** POS 시스템을 시작한다. */
 function init() {
@@ -33,14 +28,6 @@ function init() {
 
     console.group("시동")
 
-    // 메뉴 로드
-    let menu = loadMenuData()
-    let menuWithCategory = menu[0]
-    let menuWithoutCategory = menu[1]
-    console.log("메뉴 로드됨\n", menu)
-
-    // 메뉴 그리기
-    renderMenus(menuWithCategory, addMenuToOrder)
     socketIOControl()
 }
 
@@ -122,7 +109,7 @@ function socketIOControl() {
         console.log("상점 진입에 성공함!")
 
         // 상점 정보 받아오기
-        
+        socket.emit("get-menus")
     })
 
     socket.on("join-shop-fail", (args) => {
@@ -144,7 +131,20 @@ function socketIOControl() {
             socketLogin(false)
         } else {
             console.log("연결이 복구되었으며 연결된 상점이 일치합니다.")
+            socket.emit("get-menus")
         }
+    })
+
+    socket.on("get-menu-result", (result) => {
+        console.groupCollapsed("메뉴 정보 수신")
+        console.log("수신된 메뉴 정보: ", result)
+        let menuOnlyList = []
+        result.forEach(element => {
+            element.menus.forEach(element => menuOnlyList.push(element))
+        });
+        console.log("메뉴만 리스트: ", menuOnlyList)
+        console.groupEnd()
+        renderMenus(result, addMenuToOrder)
     })
 }
 
