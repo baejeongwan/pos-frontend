@@ -5,7 +5,6 @@
  * @version 1.0.0
  * @license GPL
  */
-import { renderMenus } from "./render-from-data.js"
 import { io } from "socket.io-client"
 import Swal from "sweetalert2"
 
@@ -17,6 +16,8 @@ let pendingSelected = null;
 let discountPendingList = []
 
 let discountSelected = null;
+
+let currentOrders = []
 
 let menuList = [];
 let menuOnlyList = [];
@@ -93,6 +94,44 @@ function socketIOControl() {
                 allowEscapeKey: false
             }).then(() => window.location.reload())
         }
+    })
+
+    socket.on("cook-complete-ok", (arg) => {
+        Swal.fire({
+            toast: true,
+            title: "조리 완료",
+            text: "일부 주문이 조리 완료되었습니다.",
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            },
+            position: "top-end"
+        })
+
+        currentOrders = arg
+        updateOrders()
+    })
+
+    socket.on("refund-request-ok", (arg) => {
+        Swal.fire({
+            toast: true,
+            title: "환불 완료",
+            text: "일부 주문이 환불처리되었습니다.",
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            },
+            position: "top-end"
+        })
+
+        currentOrders = arg
+        updateOrders()
     })
 
     socket.on("login-ok", () => {
@@ -200,6 +239,23 @@ function socketIOControl() {
         updateDiscountPendingList()
         updateOrderPendingList()
         updateTotal()
+        socket.emit("get-current-order")
+    })
+
+    socket.on("get-current-order-fail", () => {
+        Swal.fire({
+            icon: "error",
+            title: "주문 내역 로드 실패",
+            text: "서버 내부 오류입니다.",
+            allowEscapeKey: false,
+            allowOutsideClick: false,
+            confirmButtonText: "새로고침"
+        }).then(() => window.location.reload())
+    })
+
+    socket.on("current-order-result", (res) => {
+        currentOrders = res
+        updateOrders()
     })
 
     socket.on("order-ok", () => {
@@ -217,6 +273,24 @@ function socketIOControl() {
             title: "주문 실패",
             text: "내부 서버 오류입니다."
         })
+    })
+
+    socket.on("new-order", (arg) => {
+        Swal.fire({
+            toast: true,
+            title: "새 주문",
+            text: "새 주문이 접수되었습니다.",
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            },
+            position: "top-end"
+        })
+        currentOrders = arg
+        updateOrders()
     })
 }
 
@@ -551,6 +625,179 @@ async function orderNow() {
             }
         }
     }
+}
+
+function updateOrders() {
+    let dividedArray = divideArray(currentOrders, 3)
+    let display = document.getElementById("ordered-display")
+    display.replaceChildren()
+    dividedArray.forEach((element) => {
+        let row = document.createElement("div")
+        row.classList.add("row", "g-3", "m-1")
+        element.forEach(element2 => {
+            let cardContainer = document.createElement("div")
+            cardContainer.classList.add("col-md-3", "m-1")
+            let card = document.createElement("div")
+            card.classList.add("card")
+            let cardBody = document.createElement("div")
+            cardBody.classList.add("card-body")
+            let cardHeader = document.createElement("h5")
+            cardHeader.textContent = element2.orderdata.visitor
+            let cardText = document.createElement("div")
+            let cardTextList = document.createElement("ul")
+            element2.orderdata.orderedMenu.forEach((element3) => {
+                let cardTextListItem = document.createElement("li")
+                cardTextListItem.textContent = (menuOnlyList.find((arg) => arg.menuCode == element3.menuCode).menuName) + " × " + element3.count
+                cardTextList.appendChild(cardTextListItem)
+            })
+            let cardButtonDiv = document.createElement("div")
+            cardButtonDiv.classList.add("d-flex")
+            let completeBtn = document.createElement("button")
+            completeBtn.classList.add("btn", "btn-primary", "m-1")
+            completeBtn.dataset.posOrderid = element2.id
+            completeBtn.textContent = "조리 완료"
+            completeBtn.addEventListener("click", cookComplete)
+            let refundBtn = document.createElement("button")
+            refundBtn.classList.add("btn", "btn-warning", "m-1")
+            refundBtn.dataset.posOrderid = element2.id
+            refundBtn.textContent = "환불"
+            refundBtn.addEventListener("click", refundRequest)
+            cardButtonDiv.appendChild(completeBtn)
+            cardButtonDiv.appendChild(refundBtn)
+            cardText.appendChild(cardTextList)
+            cardBody.appendChild(cardHeader)
+            cardBody.appendChild(cardText)
+            cardBody.appendChild(cardButtonDiv)
+            card.appendChild(cardBody)
+            cardContainer.appendChild(card)
+            row.appendChild(cardContainer)
+        })
+        display.appendChild(row)
+    })
+}
+
+/**
+ * 메뉴 선택을 할 수 있는 화면을 메뉴 정보를 받아 그린다.
+ * @param {object} data - 메뉴 정보를 받는다
+ * @param {void} funcToRunWhenClicked - 메뉴 버튼이 클릭되었을때 실행할 함수이다. 해당 함수는 클릭 이벤트 정보를 파라미터로 받는다.
+ */
+function renderMenus(data, funcToRunWhenClicked) {
+    console.groupCollapsed("메뉴 선택 화면 그리기")
+    console.log("다음 항목으로 메뉴를 그립니다: ", data)
+    // Draw tabs
+    document.getElementById("menu-choose-display").replaceChildren()
+    let menuChooseHeader = document.createElement("h3")
+    menuChooseHeader.textContent = "메뉴 입력"
+    document.getElementById("menu-choose-display").appendChild(menuChooseHeader)
+    let tabList = document.createElement("ul")
+    tabList.classList.add("nav", "nav-tabs")
+    tabList.id = "menuTab"
+    tabList.role = "tablist"
+    data.forEach((element, index) => {
+        let tabInnerList = document.createElement("li")
+        let tabInnerButton = document.createElement("button")
+        tabInnerList.classList.add("nav-item")
+        tabInnerList.role = "presentation"
+        tabInnerButton.id = `tab-${index}`
+        tabInnerButton.dataset.bsToggle = "tab"
+        tabInnerButton.dataset.bsTarget = `#tab-${index}-pane`
+        tabInnerButton.type = "button"
+        tabInnerButton.role = "tab"
+        tabInnerButton.ariaControls = `tab-${index}-pane`
+        tabInnerButton.classList.add("nav-link")
+        tabInnerButton.textContent = element.sectionName
+        tabInnerList.appendChild(tabInnerButton)
+        tabList.appendChild(tabInnerList)
+        if (index == 0) {
+            tabInnerButton.classList.add("active")
+            tabInnerButton.ariaSelected = true
+        }
+    })
+    document.getElementById("menu-choose-display").appendChild(tabList)
+    console.log("탭 그리기: ", tabList)
+    // Draw pane
+    let menuTabContent = document.createElement("div")
+    menuTabContent.classList.add("tab-content")
+    menuTabContent.id = "menuTabContent"
+    console.log("탭 Pane을 그렸습니다.")
+    data.forEach((element, index) => {
+        const dividedArray = divideArray(element.menus, 3)
+        console.log("하위 탭 그리기: ", element.menus)
+        let tabPane = document.createElement("div")
+        tabPane.classList.add("tab-pane", "fade")
+        tabPane.id = `tab-${index}-pane`
+        tabPane.role = "tabpanel"
+        tabPane.ariaLabelledBy = `tab-${index}`
+        tabPane.tabIndex = 0
+        if (index == 0) {
+            tabPane.classList.add("show", "active")
+        }
+        console.log("하위 탭 Pane의 요소를 만들었습니다: ", tabPane)
+        console.log("하위 탭 내용의 Array를 나눴습니다. ", dividedArray)
+        dividedArray.forEach((element2, index2) => {
+            console.log("메뉴 한줄 그리기 / 다음 메뉴로 그림: ", element2)
+            let menuRow = document.createElement("div")
+            menuRow.classList.add("row", "g-3", "mb-3")
+            menuRow.id = `tab-${index}-pane-${index2}`
+            element2.forEach((element3 ,index3) => {
+                // 각 버튼이 눌렀을 때 특정 코드를 실행하도록 할 필요가 있음.
+                let menuBtnCont = document.createElement("div")
+                menuBtnCont.classList.add("col-sm-3")
+                let menuBtn = document.createElement("button")
+                menuBtn.classList.add("menu-button")
+                let menuBtnInsideText1 = document.createElement("div")
+                menuBtnInsideText1.textContent = element3.menuName
+                let menuBtnInsideText2 = document.createElement("small")
+                menuBtnInsideText2.textContent = element3.price + "원"
+                menuBtn.appendChild(menuBtnInsideText1)
+                menuBtn.appendChild(menuBtnInsideText2)
+                menuBtn.id = `menu-add-btn-tab-${index}-pane-${index2}-${index3}`
+                menuBtn.dataset.posMenucode = element3.menuCode
+                menuBtn.addEventListener("click", funcToRunWhenClicked)
+
+                menuBtnCont.appendChild(menuBtn)
+                menuRow.appendChild(menuBtnCont)
+            })
+            tabPane.appendChild(menuRow)
+        })
+        menuTabContent.append(tabPane)
+    })
+    document.getElementById("menu-choose-display").appendChild(menuTabContent)
+    console.groupEnd()
+}
+
+/**
+ * Array를 특정한 개수씩 나눈다.
+ * @param {any[]} array - 나눌 Array
+ * @param {number} count - 개수
+ * @returns {any[][]} - 생성된 새로운 Array
+ */
+function divideArray(array, count) {
+    const length = array.length
+    const divide = Math.floor(length / count) + (Math.floor(length%count) > 0 ? 1 : 0)
+    const newArray = []
+
+    for (let i = 0; i < divide; i++) {
+        newArray.push(array.splice(0, count))
+    }
+
+    return newArray
+}
+
+/**
+ * 조리 완료
+ * @param {PointerEvent} e 
+ */
+function cookComplete(e) {
+    socket.emit("cook-complete", e.currentTarget.dataset.posOrderid)
+}
+
+/**
+ * 환불 처리
+ * @param {PointerEvent} e 
+ */
+function refundRequest(e) {
+    socket.emit("refund-request", e.currentTarget.dataset.posOrderid)
 }
 
 document.getElementById("delete-selected-pending-btn").addEventListener("click", deleteSelectedPending)
