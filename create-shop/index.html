@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <meta name='viewport' content='width=device-width, initial-scale=1'>
+        <title>로그인 - POS</title>
+        <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css' rel='stylesheet' integrity='sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT' crossorigin='anonymous'>
+    </head>
+    <body>
+        <div class='container'>
+            
+            <div class="px-4 py-5 my-5 text-center">
+                <h1 class="display-5 fw-bold text-body-emphasis">새로운 상점 만들기</h1>
+                <div class="col-lg-6 mx-auto">
+                    <p class="lead mb-4">상점을 만들어 보겠습니다.</p>
+                    <form action="/api/create-store" method="post">
+                        <div class="mb-3">
+                            <label for="name-input">상점 이름</label>
+                            <input type="text" class="form-control" id="name-input" name="name" placeholder="카페012345" required maxlength="50">
+                        </div>
+                        <div class="mb-3">
+                            <label for="desc-input">간략한 설명</label>
+                            <input type="text" class="form-control" id="desc-input" name="desc" placeholder="honggildong" maxlength="100">
+                        </div>
+                        <div class="mb-3">
+                            <p>추가로 허가된 사용자</p>
+                            <p id="added-user-dis">현재 추가된 사용자: </p>
+                            <input type="text" class="form-control m-1" id="additional-input" placeholder="auser" onkeydown="preventSubmitOnEnter(event)">
+                            <button class="btn btn-primary" onclick="add()" type="button">추가</button>
+                            <button class="btn btn-danger" onclick="resetInputed()" type="button">초기화</button>
+                            <input type="hidden" name="allowedusers" id="ext-allowed-users" value="[]">
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary btn-lg">가입하기</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script src='https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js' integrity='sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8' crossorigin='anonymous'></script>
+        <script>
+            function preventSubmitOnEnter(e) {
+                if (e.key == "Enter") {
+                    e.preventDefault()
+                }
+            }
+
+            let list = [];
+
+            function add() {
+                if (document.getElementById("additional-input").value != "") {
+                    if (!list.some(a => a == document.getElementById("additional-input").value)) {
+                        list.push(document.getElementById("additional-input").value)
+                        document.getElementById("additional-input").value = ""
+                        document.getElementById("added-user-dis").textContent  = "현재 추가된 사용자: " + list
+                        document.getElementById("ext-allowed-users").value = ""
+                        list.forEach((e, index) => {
+                            if (index == 0) {
+                                document.getElementById("ext-allowed-users").value += ('"' + e + '"')
+                            } else {
+                                document.getElementById("ext-allowed-users").value += (',"' + e + '"')
+                            }
+                        })
+                    }
+                }
+            }
+
+            function resetInputed() {
+                list = []
+                document.getElementById("added-user-dis").textContent  = "현재 추가된 사용자: " + list
+                document.getElementById("ext-allowed-users").value = list
+            }
+        </script>
+    </body>
+</html>

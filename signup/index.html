@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <meta name='viewport' content='width=device-width, initial-scale=1'>
+        <title>로그인 - POS</title>
+        <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css' rel='stylesheet' integrity='sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT' crossorigin='anonymous'>
+    </head>
+    <body>
+        <div class='container'>
+            
+            <div class="px-4 py-5 my-5 text-center">
+                <h1 class="display-5 fw-bold text-body-emphasis">회원가입</h1>
+                <div class="col-lg-6 mx-auto">
+                    <p class="lead mb-4">POS 서비스를 이용하려면 회원가입을 하십시오.</p>
+                    <form action="/api/signup" method="post">
+                        <div class="mb-3">
+                            <label for="key-input">인증키 입력</label>
+                            <input type="password" class="form-control" id="key-input" name="key" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="name-input">이름 입력</label>
+                            <input type="text" class="form-control" id="name-input" name="name" placeholder="홍길동" required maxlength="100">
+                        </div>
+                        <div class="mb-3">
+                            <label for="id-input">ID 입력</label>
+                            <input type="text" class="form-control" id="id-input" name="id" placeholder="honggildong" required maxlength="30">
+                        </div>
+                        <div class="mb-3">
+                            <label for="pass-input">비밀번호</label>
+                            <input type="password" name="pass" id="pass-input" placeholder="abcd1234!!" class="form-control" required minlength="8">
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary btn-lg">가입하기</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script src='https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js' integrity='sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8' crossorigin='anonymous'></script>
+    </body>
+</html>

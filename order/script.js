@@ -242,6 +242,17 @@ function socketIOControl() {
         socket.emit("get-current-order")
     })
 
+    socket.on("get-menu-fail", (res) => {
+        Swal.fire({
+            icon: "error",
+            title: "메뉴를 불러올 수 없음",
+            text: "메뉴를 불러올 수 없습니다.",
+            allowEscapeKey: false,
+            allowOutsideClick: false,
+            confirmButtonText: "새로고침"
+        }).then(() => window.location.reload())
+    })
+
     socket.on("get-current-order-fail", () => {
         Swal.fire({
             icon: "error",
@@ -256,6 +267,7 @@ function socketIOControl() {
     socket.on("current-order-result", (res) => {
         currentOrders = res
         updateOrders()
+        console.groupEnd()
     })
 
     socket.on("order-ok", () => {
@@ -291,6 +303,26 @@ function socketIOControl() {
         })
         currentOrders = arg
         updateOrders()
+    })
+
+    socket.on("menu-updated", () => {
+        Swal.fire({
+            icon: "warning",
+            title: "메뉴 업데이트",
+            text: "새로운 정보를 수신하기 위해 새로고침을 해야합니다.",
+            allowEscapeKey: false,
+            allowOutsideClick: false
+        }).then(() => window.location.reload())
+    })
+    
+    socket.on("update-menu-fail", () => {
+        Swal.fire({
+            icon: "warning",
+            title: "메뉴 업데이트 실패",
+            text: "메뉴 업데이트를 실패했습니다.",
+            allowEscapeKey: false,
+            allowOutsideClick: false
+        })
     })
 }
 
@@ -800,8 +832,40 @@ function refundRequest(e) {
     socket.emit("refund-request", e.currentTarget.dataset.posOrderid)
 }
 
+function updateMenus() {
+    Swal.fire({
+        title: "새 메뉴 파일 업로드",
+        text: "형식에 맞춰 쓰여져야 합니다. 그렇지 않으면 로딩중 오류가 발생할 수 있습니다.",
+        input: "file",
+        inputAttributes: {
+            "accept": ".json",
+            "aria-label": "새 메뉴 파일 업로드"
+        },
+        showCancelButton: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let reader = new FileReader()
+            console.log(result.value)
+            reader.onload = function (e) {
+                try {
+                    let newData = JSON.parse(e.target.result)
+                    socket.emit("update-menu", newData)
+                } catch (error) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "JSON이 아님",
+                        text: "이 파일은 JSON이 아닙니다."
+                    })
+                }
+            }
+            reader.readAsText(result.value, "utf8")
+        }
+    })
+}
+
 document.getElementById("delete-selected-pending-btn").addEventListener("click", deleteSelectedPending)
 document.getElementById("delete-all-pending-btn").addEventListener("click", deleteEverythingPop)
 document.getElementById("change-selected-pending-count").addEventListener("click", modCountPop)
 document.getElementById("delete-selected-discount-btn").addEventListener("click", deletePendingDiscount)
 document.getElementById("order-now-btn").addEventListener("click", orderNow)
+document.getElementById("mod-orderable-menu-btn").addEventListener("click", updateMenus)
