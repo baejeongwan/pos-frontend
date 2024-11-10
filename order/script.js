@@ -37,13 +37,21 @@ function init() {
     console.log("%c경고%c\n개발자 콘솔에 지금 무엇을 하려는지 알고있지 않다면 절대로 붙여넣지 마십시오.", "color: red; font-size:xxx-large;", "color: inherit; font-size: inherit;")
 
     console.group("시동")
+    Swal.fire({
+        title: "접속중입니다...",
+        text: "서버에 연결하고 있습니다. 잠시만 기다려주십시오.",
+        didOpen: () => {
+            Swal.showLoading()
+        },
+        allowEscapeKey: false,
+        allowOutsideClick: false
+    })
 
     socketIOControl()
 }
 
 function socketIOControl() {
     socket.on("connect", () => {
-        console.log("Socket.IO 통신이 연결되었습니다!")
         if (socket.recovered) {
             // 복구된 통신 - 진입된 상점이 맞는지 확인
             socket.emit("get-what-shop-in")
@@ -61,6 +69,18 @@ function socketIOControl() {
                 icon: "error",
                 title: "서버 접속 실패",
                 text: "서버에 Socket.IO 통신 실패. 일시적 오류입니다."
+            }).then(() => {
+                if (!socket.connected) {
+                    Swal.fire({
+                        title: "접속중입니다...",
+                        text: "서버에 연결하고 있습니다. 잠시만 기다려주십시오.",
+                        didOpen: () => {
+                            Swal.showLoading()
+                        },
+                        allowEscapeKey: false,
+                        allowOutsideClick: false
+                    })      
+                }
             })
         } else {
             // 영구적 오류
@@ -76,12 +96,6 @@ function socketIOControl() {
     })
 
     socket.on("login-ok", () => {
-        Swal.fire({
-            icon: "success",
-            title: "서버 접속 성공",
-            text: "서버에 접속했으며 로그인에 성공했습니다."
-        })
-
         let searchParam = new URLSearchParams(window.location.search)
         if (searchParam.has("store")) {
             socket.emit("join-shop", new URLSearchParams(window.location.search).get("store"))
@@ -118,6 +132,20 @@ function socketIOControl() {
         // 상점 진입 성공
         console.log("상점 진입에 성공함!")
 
+        Swal.fire({
+            icon: "success",
+            toast: true,
+            title: "로그인 성공",
+            text: "로그인에 성공하였습니다.",
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            },
+            position: "top-end"
+        })
         // 상점 정보 받아오기
         socket.emit("get-menus")
     })
@@ -142,6 +170,19 @@ function socketIOControl() {
         } else {
             console.log("연결이 복구되었으며 연결된 상점이 일치합니다.")
             socket.emit("get-menus")
+            Swal.fire({
+                icon: "success",
+                toast: true,
+                title: "로그인 성공",
+                text: "로그인에 성공하였습니다.",
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                },
+                position: "top-end"
+            })
         }
     })
 
@@ -345,6 +386,22 @@ function deleteEverything() {
     updateTotal()
 }
 
+function deleteEverythingPop() {
+    Swal.fire({
+        icon: "warning",
+        title: "모두 삭제",
+        text: "입력한 모든 메뉴를 삭제합니다. 계속하시겠습니까?",
+        showCancelButton: true,
+        confirmButtonText: "삭제",
+        confirmButtonColor: "#d33",
+        cancelButtonText: "취소"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            deleteEverything()
+        }
+    })
+}
+
 /**
  * 선택한 입력된 메뉴를 삭제
  */
@@ -438,56 +495,66 @@ function updateTotal() {
 //#endregion
 
 async function orderNow() {
-    let confirmed = await Swal.fire({
-        icon: "question",
-        title: "주문하기",
-        text: "정말로 주문하시겠습니까?",
-        showCancelButton: true,
-        confirmButtonText: "주문하기",
-        cancelButtonText: "취소"
-    })
-    if (confirmed.isConfirmed) {
-        let name = await Swal.fire({
-            title: "주문자 이름",
-            text: "주문자 이름을 입력해주시기 바랍니다.",
-            input: "text"
+    if (orderPendingList.length == 0) {
+        Swal.fire({
+            icon: "warning",
+            title: "메뉴 없음",
+            text: "입력된 메뉴가 없습니다."
         })
-        if (name.isConfirmed) {
-            let totalSum = 0
-            orderPendingList.forEach((element) => {
-                let price = menuOnlyList.find(function (el) {
-                    return el.menuCode == element.menuCode
-                }).price
-                totalSum += price * element.count
+    } else {
+        let confirmed = await Swal.fire({
+            icon: "question",
+            title: "주문하기",
+            text: "정말로 주문하시겠습니까?",
+            showCancelButton: true,
+            confirmButtonText: "주문하기",
+            cancelButtonText: "취소"
+        })
+        if (confirmed.isConfirmed) {
+            let name = await Swal.fire({
+                title: "주문자 이름",
+                text: "주문자 이름을 입력해주시기 바랍니다.",
+                input: "text",
+                showCancelButton: true,
+                cancelButtonText: "취소"
             })
-    
-            let totalDiscount = 0
-            discountPendingList.forEach(element => {
-                let price = menuOnlyList.find(function (el) {
-                    return el.menuCode == element.menuCode
-                }).price
-                totalDiscount += price
-            })
-    
-            let finalTotal = totalSum - totalDiscount
-    
-            let data = {
-                visitor: name.value,
-                menuList: menuOnlyList,
-                orderedMenu: orderPendingList,
-                discounts: discountPendingList,
-                totalSum: totalSum,
-                totalDiscount: totalDiscount,
-                finalTotal: finalTotal
+            if (name.isConfirmed) {
+                let totalSum = 0
+                orderPendingList.forEach((element) => {
+                    let price = menuOnlyList.find(function (el) {
+                        return el.menuCode == element.menuCode
+                    }).price
+                    totalSum += price * element.count
+                })
+        
+                let totalDiscount = 0
+                discountPendingList.forEach(element => {
+                    let price = menuOnlyList.find(function (el) {
+                        return el.menuCode == element.menuCode
+                    }).price
+                    totalDiscount += price
+                })
+        
+                let finalTotal = totalSum - totalDiscount
+        
+                let data = {
+                    visitor: name.value,
+                    menuList: menuOnlyList,
+                    orderedMenu: orderPendingList,
+                    discounts: discountPendingList,
+                    totalSum: totalSum,
+                    totalDiscount: totalDiscount,
+                    finalTotal: finalTotal
+                }
+        
+                socket.emit("order", data)
             }
-    
-            socket.emit("order", data)
         }
     }
 }
 
 document.getElementById("delete-selected-pending-btn").addEventListener("click", deleteSelectedPending)
-document.getElementById("delete-all-pending-btn").addEventListener("click", deleteEverything)
+document.getElementById("delete-all-pending-btn").addEventListener("click", deleteEverythingPop)
 document.getElementById("change-selected-pending-count").addEventListener("click", modCountPop)
 document.getElementById("delete-selected-discount-btn").addEventListener("click", deletePendingDiscount)
 document.getElementById("order-now-btn").addEventListener("click", orderNow)
