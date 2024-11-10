@@ -9,3 +9,19 @@
 .menu-button:hover {
     background-color: #eee;
 }
+
+.menu-list {
+    overflow-y: scroll;
+    height: 50%;
+}
+
+.discount-list {
+    overflow-y: scroll;
+    height: 40%;
+}
+
+#menuTabContent {
+    height: 80%;
+    overflow-y: scroll;
+    overflow-x: auto;
+}

@@ -10,6 +10,25 @@ import { io } from "socket.io-client"
 import Swal from "sweetalert2"
 
 const socket = io()
+let orderPendingList = [
+    {
+        menuCode: "b01",
+        count: 3
+    },
+    {
+        menuCode: "d02",
+        count: 3
+    },
+    {
+        menuCode: "d01",
+        count: 3
+    }
+]
+
+let pendingSelected = null;
+
+let menuList = [];
+let menuOnlyList = [];
 
 init()
 
@@ -138,7 +157,8 @@ function socketIOControl() {
     socket.on("get-menu-result", (result) => {
         console.groupCollapsed("메뉴 정보 수신")
         console.log("수신된 메뉴 정보: ", result)
-        let menuOnlyList = []
+        menuList = result
+        menuOnlyList = []
         result.forEach(element => {
             element.menus.forEach(element => menuOnlyList.push(element))
         });
@@ -192,3 +212,80 @@ async function socketLogin(secondTry) {
 function addMenuToOrder(e) {
     console.log(e, e.target.dataset.posMenucode)
 }
+
+function updateOrderPendingList() {
+    let orderPendingEl = document.getElementById("order-pending")
+    orderPendingEl.replaceChildren()
+    orderPendingList.forEach((element, index) => {
+        let El = document.createElement("a")
+        El.href = "#"
+        El.classList.add("list-group-item", "list-group-item-action", "d-flex", "justify-content-between", "order-pending-child")
+        El.dataset.posOrderIndex = index
+        let innerText1 = document.createElement("div")
+        let innerText2 = document.createElement("div")
+        menuOnlyList.forEach(element2 => {
+            if (element2.menuCode == element.menuCode) {
+                innerText1.textContent = element2.menuName
+                innerText2.textContent = element.count  + "개 / " + (element.count * element2.price) + "원"
+            }
+        });
+
+        if (index == pendingSelected) {
+            El.classList.add("active")
+        }
+
+        El.addEventListener("click", orderPendingListClick)
+        El.appendChild(innerText1)
+        El.appendChild(innerText2)
+        orderPendingEl.appendChild(El)
+    })
+}
+
+
+function orderPendingListClick(e) {
+    document.querySelectorAll(".order-pending-child").forEach((element) => element.classList.remove("active"))
+    e.currentTarget.classList.add("active")
+    pendingSelected = parseInt(e.currentTarget.dataset.posOrderIndex)
+    console.log("SELECTED ", pendingSelected)
+    console.log(e.currentTarget)
+}
+
+
+function deleteAllPending() {
+    orderPendingList = []
+    updateOrderPendingList()
+}
+
+function deleteSelectedPending() {
+    if (pendingSelected != null) {
+        orderPendingList.splice(pendingSelected, 1)
+        pendingSelected = null
+        updateOrderPendingList()
+    }
+}
+
+function modCount(count) {
+    orderPendingList[pendingSelected].count = count
+    updateOrderPendingList()
+}
+
+function modCountPop() {
+    //TODO
+    if (pendingSelected == null) {
+        Swal.fire({
+            icon: "error",
+            title: "먼저 상품을 선택하세요",
+            text: "수량을 변경할 상품을 선택하세요."
+        })
+    } else {
+        Swal.fire({
+            title: "수량 변경",
+            input: "number"
+        }).then((result) => console.log(modCount(result.value)))
+    }
+}
+
+document.getElementById("test1").addEventListener("click", updateOrderPendingList)
+document.getElementById("delete-selected-pending-btn").addEventListener("click", deleteSelectedPending)
+document.getElementById("delete-all-pending-btn").addEventListener("click", deleteAllPending)
+document.getElementById("change-selected-pending-count").addEventListener("click", modCountPop)
