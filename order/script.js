@@ -10,22 +10,13 @@ import { io } from "socket.io-client"
 import Swal from "sweetalert2"
 
 const socket = io()
-let orderPendingList = [
-    {
-        menuCode: "b01",
-        count: 3
-    },
-    {
-        menuCode: "d02",
-        count: 3
-    },
-    {
-        menuCode: "d01",
-        count: 3
-    }
-]
+let orderPendingList = []
 
 let pendingSelected = null;
+
+let discountPendingList = []
+
+let discountSelected = null;
 
 let menuList = [];
 let menuOnlyList = [];
@@ -165,6 +156,26 @@ function socketIOControl() {
         console.log("메뉴만 리스트: ", menuOnlyList)
         console.groupEnd()
         renderMenus(result, addMenuToOrder)
+        updateDiscountPendingList()
+        updateOrderPendingList()
+        updateTotal()
+    })
+
+    socket.on("order-ok", () => {
+        deleteEverything()
+        Swal.fire({
+            icon: "success",
+            title: "주문 완료",
+            text: "주문을 접수했습니다."
+        })
+    })
+
+    socket.on("order-fail", (arg) => {
+        Swal.fire({
+            icon: "error",
+            title: "주문 실패",
+            text: "내부 서버 오류입니다."
+        })
     })
 }
 
@@ -204,13 +215,47 @@ async function socketLogin(secondTry) {
     socket.emit("login-request", {id: id, password: pw})
 }
 
+//#region 메뉴 등록 / 삭제
+
 /**
  * 메뉴 선택 버튼이 클릭되면 실행된다.
  * @param {PointerEvent} e - 클릭 이벤트 
  * @todo 실질적인 기능 만들기
  */
 function addMenuToOrder(e) {
-    console.log(e, e.target.dataset.posMenucode)
+    let code = e.currentTarget.dataset.posMenucode
+    let menuItem = menuOnlyList.find(function (element) {
+        return element.menuCode == code
+    })
+
+    if (menuItem == undefined) {
+        // NO DATA
+        Swal.fire({
+            icon: "warning",
+            title: "등록되지 않은 메뉴",
+            text: "해당 메뉴는 등록되지 않았습니다."
+        })
+    } else if (menuItem.discount) {
+        // 할인임
+        discountPendingList.push({menuCode: code})
+        updateDiscountPendingList()
+    } else {
+        // 메뉴임
+        let index = orderPendingList.findIndex(function (element) {
+            return element.menuCode == code
+        })
+    
+        if (index == -1) {
+            // 새로 추가
+            orderPendingList.push({menuCode: code, count: 1})
+        } else {
+            orderPendingList[index].count++
+        }
+    
+        updateOrderPendingList()
+    }
+
+    updateTotal()
 }
 
 function updateOrderPendingList() {
@@ -241,39 +286,108 @@ function updateOrderPendingList() {
     })
 }
 
+function updateDiscountPendingList() {
+    let discountPendingEl = document.getElementById("discount-pending")
+    discountPendingEl.replaceChildren()
+    discountPendingList.forEach((element, index) => {
+        let El = document.createElement("a")
+        El.href = "#"
+        El.classList.add("list-group-item", "list-group-item-action", "d-flex", "justify-content-between", "discount-pending-child")
+        El.dataset.posDiscountIndex = index
+        let innerText1 = document.createElement("div")
+        let innerText2 = document.createElement("div")
+        menuOnlyList.forEach(element2 => {
+            if (element2.menuCode == element.menuCode) {
+                innerText1.textContent = element2.menuName
+                innerText2.textContent = element2.price + "원"
+            }
+        })
 
+        if (index == discountSelected) {
+            El.classList.add("active")
+        }
+
+        El.addEventListener("click", discountPendingListClick)
+        El.appendChild(innerText1)
+        El.appendChild(innerText2)
+        discountPendingEl.appendChild(El)
+    })
+}
+
+/**
+ * 주문 입력 창의 목록 속 클릭
+ * @param {PointerEvent} e - 클릭 이벤트
+ */
 function orderPendingListClick(e) {
     document.querySelectorAll(".order-pending-child").forEach((element) => element.classList.remove("active"))
     e.currentTarget.classList.add("active")
     pendingSelected = parseInt(e.currentTarget.dataset.posOrderIndex)
-    console.log("SELECTED ", pendingSelected)
-    console.log(e.currentTarget)
 }
 
+/**
+ * 할인 입력 창의 목록 속 클릭
+ * @param {PointerEvent} e - 클릭 이벤트
+ */
+function discountPendingListClick(e) {
+    document.querySelectorAll(".discount-pending.child").forEach(element => element.classList.remove("active"))
+    e.currentTarget.classList.add("active")
+    discountSelected = parseInt(e.currentTarget.dataset.posDiscountIndex)
+}
 
-function deleteAllPending() {
+/**
+ * 모든 입력된 메뉴를 삭제
+ */
+function deleteEverything() {
     orderPendingList = []
     updateOrderPendingList()
+    discountPendingList = []
+    updateDiscountPendingList()
+    updateTotal()
 }
 
+/**
+ * 선택한 입력된 메뉴를 삭제
+ */
 function deleteSelectedPending() {
     if (pendingSelected != null) {
         orderPendingList.splice(pendingSelected, 1)
-        pendingSelected = null
+        if (orderPendingList[pendingSelected] == undefined) {
+            pendingSelected = null
+        }
         updateOrderPendingList()
     }
+    updateTotal()
 }
 
+function deletePendingDiscount() {
+    if (discountSelected != null) {
+        discountPendingList.splice(discountSelected, 1)
+        if (discountPendingList[discountSelected] == undefined) {
+            discountSelected = null
+        }
+        updateDiscountPendingList()
+    }
+    updateTotal()
+}
+
+/**
+ * 선택된 입력된 메뉴의 수량을 count로 수정
+ * @param {number} count - 새 수량
+ */
 function modCount(count) {
     orderPendingList[pendingSelected].count = count
     updateOrderPendingList()
+    updateTotal()
 }
 
+/**
+ * 선택된 입력된 메뉴의 수량을 바꾸는 창 표시
+ */
 function modCountPop() {
     //TODO
     if (pendingSelected == null) {
         Swal.fire({
-            icon: "error",
+            icon: "warning",
             title: "먼저 상품을 선택하세요",
             text: "수량을 변경할 상품을 선택하세요."
         })
@@ -281,11 +395,99 @@ function modCountPop() {
         Swal.fire({
             title: "수량 변경",
             input: "number"
-        }).then((result) => console.log(modCount(result.value)))
+        }).then((result) => {
+            if (parseInt(result.value) > 0) {
+                modCount(result.value)
+            } else if (parseInt(result.value) == 0) {
+                deleteSelectedPending()
+            } else {
+                Swal.fire({
+                    title: "잘못된 수량",
+                    icon: "warning",
+                    text: "수량은 음수일 수 없습니다."
+                })
+            }
+        })
     }
 }
 
-document.getElementById("test1").addEventListener("click", updateOrderPendingList)
+function updateTotal() {
+    let totalSum = 0
+    orderPendingList.forEach((element) => {
+        let price = menuOnlyList.find(function (el) {
+            return el.menuCode == element.menuCode
+        }).price
+        totalSum += price * element.count
+    })
+
+    let totalDiscount = 0
+    discountPendingList.forEach(element => {
+        let price = menuOnlyList.find(function (el) {
+            return el.menuCode == element.menuCode
+        }).price
+        totalDiscount += price
+    })
+
+    let finalTotal = totalSum - totalDiscount
+
+    document.getElementById("total-sum").textContent = totalSum + "원"
+    document.getElementById("total-discount").textContent = totalDiscount + "원"
+    document.getElementById("total-payment").textContent = finalTotal + "원"
+}
+
+//#endregion
+
+async function orderNow() {
+    let confirmed = await Swal.fire({
+        icon: "question",
+        title: "주문하기",
+        text: "정말로 주문하시겠습니까?",
+        showCancelButton: true,
+        confirmButtonText: "주문하기",
+        cancelButtonText: "취소"
+    })
+    if (confirmed.isConfirmed) {
+        let name = await Swal.fire({
+            title: "주문자 이름",
+            text: "주문자 이름을 입력해주시기 바랍니다.",
+            input: "text"
+        })
+        if (name.isConfirmed) {
+            let totalSum = 0
+            orderPendingList.forEach((element) => {
+                let price = menuOnlyList.find(function (el) {
+                    return el.menuCode == element.menuCode
+                }).price
+                totalSum += price * element.count
+            })
+    
+            let totalDiscount = 0
+            discountPendingList.forEach(element => {
+                let price = menuOnlyList.find(function (el) {
+                    return el.menuCode == element.menuCode
+                }).price
+                totalDiscount += price
+            })
+    
+            let finalTotal = totalSum - totalDiscount
+    
+            let data = {
+                visitor: name.value,
+                menuList: menuOnlyList,
+                orderedMenu: orderPendingList,
+                discounts: discountPendingList,
+                totalSum: totalSum,
+                totalDiscount: totalDiscount,
+                finalTotal: finalTotal
+            }
+    
+            socket.emit("order", data)
+        }
+    }
+}
+
 document.getElementById("delete-selected-pending-btn").addEventListener("click", deleteSelectedPending)
-document.getElementById("delete-all-pending-btn").addEventListener("click", deleteAllPending)
+document.getElementById("delete-all-pending-btn").addEventListener("click", deleteEverything)
 document.getElementById("change-selected-pending-count").addEventListener("click", modCountPop)
+document.getElementById("delete-selected-discount-btn").addEventListener("click", deletePendingDiscount)
+document.getElementById("order-now-btn").addEventListener("click", orderNow)

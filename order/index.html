@@ -26,31 +26,34 @@
                             <!--등록된 메뉴 리스트-->
                             <h3>선택된 메뉴</h3>
                             <div class="list-group menu-list" id="order-pending">
-                                <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between">
-                                    <p>메뉴 AA</p>
-                                    <p>3개 / 4500원</p>
-                                </a>
-                                <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between">
-                                    <p>메뉴 BB</p>
-                                    <p>2개 / 3000원</p>
-                                </a>
+                                
                             </div>
                             <h3>등록된 할인</h3>
-                            <div class="list-group discount-list">
-                                <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between">
-                                    <p>할인권</p>
-                                    <p>3000원</p>
-                                </a>
+                            <div class="list-group discount-list" id="discount-pending">
+                            </div>
+                            <div>
+                                <div class="d-flex justify-content-between" style="border: 1px solid black; margin-top: 1px; border-radius: 3px; padding: 1px;">
+                                    <h5>합산 금액</h5>
+                                    <div id="total-sum"></div>
+                                </div>
+                                <div class="d-flex justify-content-between" style="border: 1px solid black; margin-top: 1px; border-radius: 3px; padding: 1px;">
+                                    <h5>총 할인</h5>
+                                    <div id="total-discount"></div>
+                                </div>
+                                <div class="d-flex justify-content-between" style="border: 1px solid black; margin-top: 1px; border-radius: 3px; padding: 1px;">
+                                    <h5>결제할 금액</h5>
+                                    <div id="total-payment"></div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-1">
                             <!--버튼-->
                             <button class="btn btn-primary my-1" id="change-selected-pending-count">수량 변경</button>
-                            <button class="btn btn-primary my-1" id="test1">사용자 정의 메뉴</button>
                             <button class="btn btn-primary my-1" id="delete-selected-pending-btn">메뉴 삭제</button>
+                            <button class="btn btn-primary my-1" id="delete-selected-discount-btn">할인 취소</button>
                             <button class="btn btn-danger my-1" id="delete-all-pending-btn">모두 삭제</button>
                             <button class="btn btn-warning my-1">주문가능한 메뉴 수정</button>
-                            <button class="btn btn-primary my-1">주문하기</button>
+                            <button class="btn btn-primary my-1" id="order-now-btn">주문하기</button>
                         </div>
                     </div>
                 </div>

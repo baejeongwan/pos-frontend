@@ -7,12 +7,12 @@
 }
 
 .menu-button:hover {
-    background-color: #eee;
+    background-color: #ddd;
 }
 
 .menu-list {
     overflow-y: scroll;
-    height: 50%;
+    height: 40%;
 }
 
 .discount-list {

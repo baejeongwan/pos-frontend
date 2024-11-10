@@ -76,9 +76,14 @@ function renderMenus(data, funcToRunWhenClicked) {
                 menuBtnCont.classList.add("col-sm-3")
                 let menuBtn = document.createElement("button")
                 menuBtn.classList.add("menu-button")
+                let menuBtnInsideText1 = document.createElement("div")
+                menuBtnInsideText1.textContent = element3.menuName
+                let menuBtnInsideText2 = document.createElement("small")
+                menuBtnInsideText2.textContent = element3.price + "원"
+                menuBtn.appendChild(menuBtnInsideText1)
+                menuBtn.appendChild(menuBtnInsideText2)
                 menuBtn.id = `menu-add-btn-tab-${index}-pane-${index2}-${index3}`
                 menuBtn.dataset.posMenucode = element3.menuCode
-                menuBtn.textContent = element3.menuName
                 menuBtn.addEventListener("click", funcToRunWhenClicked)
 
                 menuBtnCont.appendChild(menuBtn)
