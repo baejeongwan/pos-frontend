@@ -828,7 +828,8 @@ function cookComplete(e) {
         didOpen: () => {
             Swal.showLoading()
         },
-        showConfirmButton: false
+        showConfirmButton: false,
+        position: "top-end"
     })
     socket.emit("cook-complete", e.currentTarget.dataset.posOrderid)
 }
@@ -845,7 +846,8 @@ function refundRequest(e) {
         didOpen: () => {
             Swal.showLoading()
         },
-        showConfirmButton: false
+        showConfirmButton: false,
+        position: "top-end"
     })
     socket.emit("refund-request", e.currentTarget.dataset.posOrderid)
 }
