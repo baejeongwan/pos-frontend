@@ -30,7 +30,7 @@
                             <button class="btn btn-danger" onclick="resetInputed()" type="button">초기화</button>
                             <input type="hidden" name="allowedusers" id="ext-allowed-users" value="[]">
                         </div>
-                        <button type="submit" class="btn btn-outline-primary btn-lg">가입하기</button>
+                        <button type="submit" class="btn btn-outline-primary btn-lg">생성하기</button>
                     </form>
                 </div>
             </div>
@@ -66,6 +66,7 @@
             function resetInputed() {
                 list = []
                 document.getElementById("added-user-dis").textContent  = "현재 추가된 사용자: " + list
+                document.getElementById("additional-input").value = ""
                 document.getElementById("ext-allowed-users").value = list
             }
         </script>

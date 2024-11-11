@@ -5,10 +5,10 @@
  * @version 1.0.0
  * @license GPL
  */
-import { io } from "socket.io-client"
-import Swal from "sweetalert2"
 
 const socket = io()
+
+const statModal = new bootstrap.Modal(document.getElementById("statModal"))
 let orderPendingList = []
 
 let pendingSelected = null;
@@ -152,8 +152,43 @@ function socketIOControl() {
             position: "top-end"
         })
 
+        console.log(arg)
         currentOrders = arg
         updateOrders()
+    })
+
+    socket.on("refund-request-fail", () => {
+        Swal.fire({
+            icon: "error",
+            toast: true,
+            title: "환불 처리 실패",
+            text: "환불 처리를 실패했습니다.",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            },
+        })
+    })
+
+    socket.on("cook-complete-fail", () => {
+        Swal.fire({
+            icon: "error",
+            toast: true,
+            title: "조리 완료 실패",
+            text: "조리 완료 처리를 실패했습니다.",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            },
+        })
     })
 
     socket.on("login-ok", () => {
@@ -165,10 +200,10 @@ function socketIOControl() {
                 icon: "error",
                 title: "비 정상적인 접근",
                 text: "URL에 쿼리스트링이 제공되지 않아 더이상 진행할 수 없습니다.",
-                confirmButtonText: "뒤로가기",
+                confirmButtonText: "메인으로",
                 allowEscapeKey: false,
                 allowOutsideClick: false
-            }).then(() => history.back())
+            }).then(() => window.location.href = "/")
         }
         console.log("로그인에 성공함!")
     })
@@ -220,8 +255,8 @@ function socketIOControl() {
             text: "해당 상점에 접근할 수 있는 권한이 없거나 없는 상점입니다.",
             allowEscapeKey: false,
             allowOutsideClick: false,
-            confirmButtonText: "뒤로가기"
-        }).then(() => history.back())
+            confirmButtonText: "메인으로"
+        }).then(() => window.location.href = "/")
     })
 
     socket.on("what-shop-in", (args) => {
@@ -294,11 +329,6 @@ function socketIOControl() {
 
     socket.on("order-ok", () => {
         deleteEverything()
-        Swal.fire({
-            icon: "success",
-            title: "주문 완료",
-            text: "주문을 접수했습니다."
-        })
     })
 
     socket.on("order-fail", (arg) => {
@@ -344,6 +374,137 @@ function socketIOControl() {
             text: "메뉴 업데이트를 실패했습니다.",
             allowEscapeKey: false,
             allowOutsideClick: false
+        })
+    })
+
+    socket.on("get-all-data-for-stats-result", (res) => {
+        console.group("통계 및 데이터 창 그리기")
+        console.log("수신된 데이터: ", res)
+        // Data 도착!
+        statModal.show()
+        // 분류하기
+        let cooking = []
+        let refunded = []
+        let served = []
+        res.forEach(element => {
+            if (element.servingstate == "cooking") {
+                cooking.push(element)
+            } else if (element.servingstate == "refunded") {
+                refunded.push(element)
+            } else if (element.servingstate == "served") {
+                served.push(element)
+            }
+        })
+        console.log("Cooking: ", cooking, " / Refunded: ", refunded , " / Served: ", served)
+        // 총 판매 금액 (서빙된 것만)
+        let totalSell = 0
+        served.forEach(e => totalSell += e.orderdata.finalTotal)
+        // 총 할인 금액 (서빙된 것만)
+        let totalDiscount = 0
+        served.forEach(e => totalDiscount += e.orderdata.totalDiscount)
+        // 총 판매 건수 (서빙된 것만)
+        let totalSellCount = served.length
+        // 현재 요리중인 주문 건수
+        let cookingInProgressCount = cooking.length
+
+        // Summary 그리기
+        document.getElementById("total-sell-display").textContent = totalSell + "원"
+        document.getElementById("total-discount-display").textContent = totalDiscount + "원"
+        document.getElementById("total-sell-count").textContent = totalSellCount + "건"
+        document.getElementById("cooking-in-progress-count").textContent = cookingInProgressCount + "건"
+
+        // 모든 데이터 보는 창 그리기
+        let tabPane = document.getElementById("alldata-tab-pane")
+        tabPane.replaceChildren()
+        let sliced = divideArray(res, 3)
+        sliced.forEach((element) => {
+            let row = document.createElement("div")
+            row.classList.add("row", "g-3", "my-1")
+            element.forEach((element2) => {
+                let col = document.createElement("div")
+                col.classList.add("col-md-3")
+                let card = document.createElement("div")
+                card.classList.add("card", "mx-1")
+                let cardBody = document.createElement("div")
+                cardBody.classList.add("card-body")
+                let cardHeader = document.createElement("h5")
+                cardHeader.textContent = element2.orderdata.visitor
+                cardHeader.classList.add("card-title")
+                cardBody.appendChild(cardHeader)
+                //#region 잡다한 정보
+                let orderTimeBox = document.createElement("div")
+                orderTimeBox.classList.add("d-flex", "justify-content-between")
+                let orderTimeHeader = document.createElement("h6")
+                orderTimeHeader.textContent = "주문 시각"
+                let orderTimeContent = document.createElement("span")
+                let date = new Date(element2.ordertime)
+                let formattedDate = date.getFullYear() + "/" + (date.getMonth()+1) + "/" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
+                orderTimeContent.textContent = formattedDate
+                orderTimeBox.appendChild(orderTimeHeader)
+                orderTimeBox.appendChild(orderTimeContent)
+                cardBody.appendChild(orderTimeBox)
+
+                let stateBox = document.createElement("div")
+                stateBox.classList.add("d-flex", "justify-content-between")
+                let stateBoxHeader = document.createElement("h6")
+                stateBoxHeader.textContent = "상태"
+                let stateBoxContent = document.createElement("span")
+                if (element2.servingstate == "cooking") {
+                    stateBoxContent.textContent = "조리중"
+                } else if (element2.servingstate == "refunded") {
+                    stateBoxContent.textContent = "환불됨"
+                } else if (element2.servingstate == "served") {
+                    stateBoxContent.textContent = "서빙됨"
+                } else {   
+                    stateBoxContent.textContent = element2.servingstate
+                }
+                stateBox.appendChild(stateBoxHeader)
+                stateBox.appendChild(stateBoxContent)
+                cardBody.appendChild(stateBox)
+
+                let finalTotalBox = document.createElement("div")
+                finalTotalBox.classList.add("d-flex", "justify-content-between")
+                let finalTotalHeader = document.createElement("h6")
+                finalTotalHeader.textContent = "총 금액"
+                let finalTotalContent = document.createElement("span")
+                finalTotalContent.textContent = element2.orderdata.finalTotal
+                finalTotalBox.appendChild(finalTotalHeader)
+                finalTotalBox.appendChild(finalTotalContent)
+                cardBody.appendChild(finalTotalBox)
+
+                let totalDiscountBox = document.createElement("div")
+                totalDiscountBox.classList.add("d-flex", "justify-content-between")
+                let totalDiscountHeader = document.createElement("h6")
+                totalDiscountHeader.textContent = "총 할인"
+                let totalDiscountContent = document.createElement("span")
+                totalDiscountContent.textContent = element2.orderdata.totalDiscount
+                totalDiscountBox.appendChild(totalDiscountHeader)
+                totalDiscountBox.appendChild(totalDiscountContent)
+                cardBody.appendChild(totalDiscountBox)
+                //#endregion
+                
+                let menuListBox = document.createElement("div")
+                let menuListHeader = document.createElement("h6")
+                menuListHeader.textContent = "주문 목록"
+                menuListBox.appendChild(menuListHeader)
+                let menuListList = document.createElement("ul")
+                element2.orderdata.orderedMenu.forEach((e) => {
+                    let menu = element2.orderdata.menuList.find(a => a.menuCode == e.menuCode)
+                    let menuListListItem = document.createElement("li")
+                    if (menu == undefined) {
+                        menuListListItem.textContent = "(알 수 없는 메뉴) × " + e.count
+                    } else {
+                        menuListListItem.textContent = menu.menuName + " × " + e.count
+                    }
+                    menuListList.appendChild(menuListListItem)
+                })
+                menuListBox.appendChild(menuListList)
+                cardBody.appendChild(menuListBox)
+                card.appendChild(cardBody)
+                col.appendChild(card)
+                row.appendChild(col)
+            })
+            tabPane.appendChild(row)
         })
     })
 }
@@ -730,6 +891,10 @@ function updateOrders() {
     })
 }
 
+function showStatsModal() {
+    socket.emit("get-all-data-for-stats")
+}
+
 /**
  * 메뉴 선택을 할 수 있는 화면을 메뉴 정보를 받아 그린다.
  * @param {object} data - 메뉴 정보를 받는다
@@ -913,3 +1078,5 @@ document.getElementById("change-selected-pending-count").addEventListener("click
 document.getElementById("delete-selected-discount-btn").addEventListener("click", deletePendingDiscount)
 document.getElementById("order-now-btn").addEventListener("click", orderNow)
 document.getElementById("mod-orderable-menu-btn").addEventListener("click", updateMenus)
+document.getElementById("show-all-orders-and-stats-btn").addEventListener("click", showStatsModal)
+document.getElementById("update-orders-btn").addEventListener("click", updateOrders)
