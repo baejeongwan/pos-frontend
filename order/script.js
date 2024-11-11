@@ -96,6 +96,28 @@ function socketIOControl() {
         }
     })
 
+    socket.on("kill-all", (val) => {
+        if (val == "STOREDELETE") {
+            Swal.fire({
+                title: "상점 삭제됨",
+                text: "이 상점은 삭제되었습니다.",
+                allowEscapeKey: false,
+                allowOutsideClick: false,
+                icon: "warning",
+                confirmButtonText: "메인으로"
+            }).then(() => window.location.href = "/")
+        } else {
+            Swal.fire({
+                title: "모든 연결 종료",
+                text: "모든 연결 종료 명령으로 인해 통신이 종료되었습니다.",
+                allowEscapeKey: false,
+                allowOutsideClick: false,
+                icon: "warning",
+                confirmButtonText: "메인으로"
+            }).then(() => window.location.href = "/")
+        }
+    })
+
     socket.on("cook-complete-ok", (arg) => {
         Swal.fire({
             toast: true,
@@ -820,6 +842,8 @@ function divideArray(array, count) {
  * 조리 완료
  * @param {PointerEvent} e 
  */
+
+
 function cookComplete(e) {
     Swal.fire({
         title: "조리 완료 요청",
