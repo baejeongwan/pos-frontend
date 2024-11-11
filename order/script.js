@@ -821,6 +821,15 @@ function divideArray(array, count) {
  * @param {PointerEvent} e 
  */
 function cookComplete(e) {
+    Swal.fire({
+        title: "조리 완료 요청",
+        text: "조리 완료 요청을 처리하고 있습니다.",
+        toast: true,
+        didOpen: () => {
+            Swal.showLoading()
+        },
+        showConfirmButton: false
+    })
     socket.emit("cook-complete", e.currentTarget.dataset.posOrderid)
 }
 
@@ -829,6 +838,15 @@ function cookComplete(e) {
  * @param {PointerEvent} e 
  */
 function refundRequest(e) {
+    Swal.fire({
+        title: "환불 요청",
+        text: "환불 요청을 처리하고 있습니다.",
+        toast: true,
+        didOpen: () => {
+            Swal.showLoading()
+        },
+        showConfirmButton: false
+    })
     socket.emit("refund-request", e.currentTarget.dataset.posOrderid)
 }
 
