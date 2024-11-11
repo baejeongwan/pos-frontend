@@ -850,52 +850,54 @@ async function orderNow() {
 }
 
 function updateOrders() {
-    let dividedArray = divideArray(currentOrders, 3)
-    let display = document.getElementById("ordered-display")
-    display.replaceChildren()
-    dividedArray.forEach((element) => {
-        let row = document.createElement("div")
-        row.classList.add("row", "g-3", "m-1")
-        element.forEach(element2 => {
-            let cardContainer = document.createElement("div")
-            cardContainer.classList.add("col-md-3", "m-1")
-            let card = document.createElement("div")
-            card.classList.add("card")
-            let cardBody = document.createElement("div")
-            cardBody.classList.add("card-body")
-            let cardHeader = document.createElement("h5")
-            cardHeader.textContent = element2.orderdata.visitor
-            let cardText = document.createElement("div")
-            let cardTextList = document.createElement("ul")
-            element2.orderdata.orderedMenu.forEach((element3) => {
-                let cardTextListItem = document.createElement("li")
-                cardTextListItem.textContent = (menuOnlyList.find((arg) => arg.menuCode == element3.menuCode).menuName) + " × " + element3.count
-                cardTextList.appendChild(cardTextListItem)
+    if (!(currentOrders == undefined || currentOrders == null || currentOrders == [])) {
+        let dividedArray = divideArray(currentOrders, 3)
+        let display = document.getElementById("ordered-display")
+        display.replaceChildren()
+        dividedArray.forEach((element) => {
+            let row = document.createElement("div")
+            row.classList.add("row", "g-3", "m-1")
+            element.forEach(element2 => {
+                let cardContainer = document.createElement("div")
+                cardContainer.classList.add("col-md-3", "m-1")
+                let card = document.createElement("div")
+                card.classList.add("card")
+                let cardBody = document.createElement("div")
+                cardBody.classList.add("card-body")
+                let cardHeader = document.createElement("h5")
+                cardHeader.textContent = element2.orderdata.visitor
+                let cardText = document.createElement("div")
+                let cardTextList = document.createElement("ul")
+                element2.orderdata.orderedMenu.forEach((element3) => {
+                    let cardTextListItem = document.createElement("li")
+                    cardTextListItem.textContent = (menuOnlyList.find((arg) => arg.menuCode == element3.menuCode).menuName) + " × " + element3.count
+                    cardTextList.appendChild(cardTextListItem)
+                })
+                let cardButtonDiv = document.createElement("div")
+                cardButtonDiv.classList.add("d-flex")
+                let completeBtn = document.createElement("button")
+                completeBtn.classList.add("btn", "btn-primary", "m-1")
+                completeBtn.dataset.posOrderid = element2.id
+                completeBtn.textContent = "조리 완료"
+                completeBtn.addEventListener("click", cookComplete)
+                let refundBtn = document.createElement("button")
+                refundBtn.classList.add("btn", "btn-warning", "m-1")
+                refundBtn.dataset.posOrderid = element2.id
+                refundBtn.textContent = "환불"
+                refundBtn.addEventListener("click", refundRequest)
+                cardButtonDiv.appendChild(completeBtn)
+                cardButtonDiv.appendChild(refundBtn)
+                cardText.appendChild(cardTextList)
+                cardBody.appendChild(cardHeader)
+                cardBody.appendChild(cardText)
+                cardBody.appendChild(cardButtonDiv)
+                card.appendChild(cardBody)
+                cardContainer.appendChild(card)
+                row.appendChild(cardContainer)
             })
-            let cardButtonDiv = document.createElement("div")
-            cardButtonDiv.classList.add("d-flex")
-            let completeBtn = document.createElement("button")
-            completeBtn.classList.add("btn", "btn-primary", "m-1")
-            completeBtn.dataset.posOrderid = element2.id
-            completeBtn.textContent = "조리 완료"
-            completeBtn.addEventListener("click", cookComplete)
-            let refundBtn = document.createElement("button")
-            refundBtn.classList.add("btn", "btn-warning", "m-1")
-            refundBtn.dataset.posOrderid = element2.id
-            refundBtn.textContent = "환불"
-            refundBtn.addEventListener("click", refundRequest)
-            cardButtonDiv.appendChild(completeBtn)
-            cardButtonDiv.appendChild(refundBtn)
-            cardText.appendChild(cardTextList)
-            cardBody.appendChild(cardHeader)
-            cardBody.appendChild(cardText)
-            cardBody.appendChild(cardButtonDiv)
-            card.appendChild(cardBody)
-            cardContainer.appendChild(card)
-            row.appendChild(cardContainer)
+            display.appendChild(row)
         })
-        display.appendChild(row)
-    })
+    }
 }
 
 function showStatsModal() {
