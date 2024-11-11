@@ -16,16 +16,16 @@
                     <form action="/api/create-store" method="post">
                         <div class="mb-3">
                             <label for="name-input">상점 이름</label>
-                            <input type="text" class="form-control" id="name-input" name="name" placeholder="카페012345" required maxlength="50">
+                            <input type="text" class="form-control" id="name-input" name="name" placeholder="상점 이름" required maxlength="50">
                         </div>
                         <div class="mb-3">
                             <label for="desc-input">간략한 설명</label>
-                            <input type="text" class="form-control" id="desc-input" name="desc" placeholder="honggildong" maxlength="100">
+                            <input type="text" class="form-control" id="desc-input" name="desc" placeholder="설명 입력..." maxlength="100">
                         </div>
                         <div class="mb-3">
                             <p>추가로 허가된 사용자</p>
                             <p id="added-user-dis">현재 추가된 사용자: </p>
-                            <input type="text" class="form-control m-1" id="additional-input" placeholder="auser" onkeydown="preventSubmitOnEnter(event)">
+                            <input type="text" class="form-control m-1" id="additional-input" placeholder="추가할 사용자의 ID 입력..." onkeydown="preventSubmitOnEnter(event)">
                             <button class="btn btn-primary" onclick="add()" type="button">추가</button>
                             <button class="btn btn-danger" onclick="resetInputed()" type="button">초기화</button>
                             <input type="hidden" name="allowedusers" id="ext-allowed-users" value="[]">

@@ -9,6 +9,10 @@
 const socket = io()
 
 const statModal = new bootstrap.Modal(document.getElementById("statModal"))
+
+const ding = new Audio("ding.mp3")
+ding.load()
+
 let orderPendingList = []
 
 let pendingSelected = null;
@@ -132,6 +136,7 @@ function socketIOControl() {
             },
             position: "top-end"
         })
+        ding.play()
 
         currentOrders = arg
         updateOrders()
@@ -151,6 +156,7 @@ function socketIOControl() {
             },
             position: "top-end"
         })
+        ding.play()
 
         console.log(arg)
         currentOrders = arg
@@ -353,6 +359,7 @@ function socketIOControl() {
             },
             position: "top-end"
         })
+        ding.play()
         currentOrders = arg
         updateOrders()
     })
